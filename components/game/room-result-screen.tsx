@@ -14,6 +14,8 @@ import {
   Bot,
   Blocks,
   AlertTriangle,
+  Check,
+  X,
 } from "lucide-react"
 
 const roomIcons: Record<string, React.ReactNode> = {
@@ -75,7 +77,7 @@ export function RoomResultScreen() {
         )}
       </div>
 
-      {/* Info about what happened, no details on which questions */}
+      {/* Info about what happened */}
       <div className="mb-6 rounded-xl border border-border bg-card p-4">
         {passed ? (
           <p className="text-center text-sm leading-relaxed text-card-foreground">
@@ -83,6 +85,48 @@ export function RoomResultScreen() {
             {GAME_CONFIG.passingThreshold}/{room.questions.length}
             {" correct answers. Well done!"}
           </p>
+        ) : roomState.endOfRoomHintUsed ? (
+          /* After hint: show each question with correct/wrong indicator */
+          <div className="flex flex-col gap-2">
+            <p className="mb-1 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Question Breakdown
+            </p>
+            {room.questions.map((q, i) => {
+              const wasCorrect = roomState.correctAnswers[q.id] === true
+              return (
+                <div
+                  key={q.id}
+                  className={cn(
+                    "flex items-start gap-2.5 rounded-lg border px-3 py-2.5",
+                    wasCorrect
+                      ? "border-game-success/30 bg-game-success/5"
+                      : "border-game-danger/30 bg-game-danger/5"
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full",
+                      wasCorrect ? "bg-game-success/20" : "bg-game-danger/20"
+                    )}
+                  >
+                    {wasCorrect ? (
+                      <Check className="size-3 text-game-success" />
+                    ) : (
+                      <X className="size-3 text-game-danger" />
+                    )}
+                  </div>
+                  <p
+                    className={cn(
+                      "text-sm leading-snug",
+                      wasCorrect ? "text-game-success" : "text-game-danger"
+                    )}
+                  >
+                    {"Q"}{i + 1}{": "}{q.text.length > 70 ? q.text.slice(0, 70) + "..." : q.text}
+                  </p>
+                </div>
+              )
+            })}
+          </div>
         ) : (
           <p className="text-center text-sm leading-relaxed text-card-foreground">
             {"You did not reach the passing threshold of "}
@@ -129,7 +173,7 @@ export function RoomResultScreen() {
 
             {!roomState.endOfRoomHintUsed && (
               <p className="text-center text-xs text-muted-foreground/70">
-                Hint reveals your score (e.g. 3/5) without showing which questions were wrong.
+                Hint reveals your score and which questions were wrong.
               </p>
             )}
 

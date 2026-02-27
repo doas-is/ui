@@ -98,7 +98,36 @@ function createGameStore() {
         const next = prev.timeRemaining - 1
         if (next <= 0) {
           stopTimer()
-          return { timeRemaining: 0, screen: "game-over", isTimerRunning: false }
+
+          // Apply time-expiry penalties before submitting final score:
+          // -25 for each incomplete room, -5 for each unanswered question
+          let penalty = 0
+          const updatedRoomStates = prev.roomStates.map((rs, idx) => {
+            const room = rooms[idx]
+            if (rs.completed && rs.passed) return rs // fully passed, no penalty
+
+            // Room is incomplete (never completed or failed without clear)
+            if (!rs.passed) {
+              penalty += 25 // incomplete room penalty
+            }
+
+            // Count unanswered questions in this room
+            const answeredCount = Object.keys(rs.answers).length
+            const unanswered = room.questions.length - answeredCount
+            penalty += unanswered * 5 // -5 per unanswered question
+
+            return rs
+          })
+
+          const finalScore = Math.max(0, prev.score - penalty)
+
+          return {
+            timeRemaining: 0,
+            screen: "game-over" as GameScreen,
+            isTimerRunning: false,
+            score: finalScore,
+            roomStates: updatedRoomStates,
+          }
         }
         return { timeRemaining: next }
       })

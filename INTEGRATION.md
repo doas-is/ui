@@ -361,7 +361,7 @@ const tx = await contract.requestHint(roomId, 1, signature)
 const receipt = await tx.wait()
 ```
 
-**UI display:** Shows only the count (e.g., "3/5") -- never reveals WHICH questions were wrong or right. This is critical to the game design.
+**UI display:** Shows the count (e.g., "3/5") AND a per-question breakdown with green (correct) and red (wrong) indicators. Each question text is shown with a colored check/cross icon so the player knows exactly which questions they got wrong. This helps them study before retrying.
 
 **Cost:** -10 pts (the UI currently deducts 10 from local store; contract deducts its own penalty)
 
@@ -400,7 +400,31 @@ await tx.wait()
 
 **UI file:** `components/game/game-hud.tsx` (display), `lib/game-store.tsx` (timer logic)
 
-**Local action:** When `timeRemaining` hits 0, the store sets `screen: "game-over"` and stops the timer.
+**Local action (time-expiry penalty calculation):**
+When `timeRemaining` hits 0, the local store applies penalties **before** finalizing the score:
+
+| Condition | Penalty | Example |
+|-----------|---------|---------|
+| Each room NOT passed | -25 pts | Player stuck on room 2 = rooms 2, 3, 4 not passed = -75 |
+| Each unanswered question in any incomplete room | -5 pts | Room 2 has 3/5 answered = 2 unanswered = -10 |
+
+**Full penalty formula:**
+```
+finalScore = frozenScore
+           - (incompleteRooms * 25)
+           - (unansweredQuestions * 5)
+finalScore = max(0, finalScore)
+```
+
+**Example scenario:**
+- Player is in room 2, answered 3 of 5 questions, rooms 3 and 4 never started.
+- Rooms not passed: 2, 3, 4 = 3 rooms x 25 = -75
+- Unanswered in room 2: 2 questions x 5 = -10
+- Unanswered in room 3: 5 questions x 5 = -25
+- Unanswered in room 4: 5 questions x 5 = -25
+- Total penalty: -135 (score floors at 0)
+
+After applying penalties, the UI transitions directly to the game-over/leaderboard screen. The score is frozen and no further actions can change it.
 
 **Contract call:** `checkTimeExpiry(signer)` in `lib/integration.ts`
 ```typescript
@@ -420,6 +444,83 @@ await tx.wait()
 const stats = await contract.getMyStats(playerAddress)
 const serverTimeRemaining = Number(stats.timeRemainingSeconds)
 // Update local store: setState({ timeRemaining: serverTimeRemaining })
+```
+
+---
+
+### 5.8.1 Score Submission via Backend Event Bus (Time Expiry)
+
+> **This section is for backend integration only.** The frontend does NOT call the event bus directly. The backend (Person 4) handles score submission to the event bus after receiving the `TimeExpiredEvent` or `GameCompleted` contract event.
+
+**Backend responsibility:**
+When the smart contract emits `TimeExpiredEvent(player, finalScore)` or `GameCompleted(player, finalScore, durationSeconds)`, the backend must:
+
+1. **Listen for the contract event** via an event listener or webhook.
+2. **Apply the same penalty formula** server-side (as a validation check):
+   - For each room where `getRoomState(player, roomId).state != 2` (not Passed): -25 pts
+   - For each unanswered question in those rooms via `getQuizProgress(player, roomId)`: -5 pts
+   - `finalScore = max(0, contractScore - totalPenalty)`
+3. **Submit to the event bus** with the player's data:
+
+```json
+// Event bus payload (backend -> event_bus)
+{
+  "event": "player_score_submission",
+  "player_id": "0x...",           // wallet address
+  "player_name": "PlayerName",
+  "final_score": 45,              // after all penalties
+  "timestamp": 1740000000,        // unix timestamp
+  "timed_out": true,              // whether game ended by timer
+  "rooms_completed": 1,           // count of rooms passed
+  "total_rooms": 4,
+  "time_used_seconds": 900,       // 15 * 60 = full time if timed out
+  "penalties_applied": {
+    "incomplete_rooms": 3,        // rooms not passed
+    "incomplete_room_penalty": 75,// 3 * 25
+    "unanswered_questions": 12,   // total unanswered across all incomplete rooms
+    "unanswered_question_penalty": 60, // 12 * 5
+    "hint_penalties": 10,         // total hint penalty points deducted
+    "retry_penalties": 5,         // total retry penalty points deducted
+    "total_penalty": 150
+  }
+}
+```
+
+**Event bus stores:**
+| Field | Type | Description |
+|-------|------|-------------|
+| `player_id` | `string` | Wallet address (primary key) |
+| `player_name` | `string` | Display name from welcome screen |
+| `final_score` | `uint16` | Score after all penalties (0-100) |
+| `timestamp` | `uint32` | Unix timestamp of score submission |
+| `timed_out` | `bool` | Whether game ended by time expiry |
+| `rooms_completed` | `uint8` | Number of rooms passed |
+| `time_used_seconds` | `uint32` | Total game duration |
+
+**Leaderboard ranking (event bus -> contract):**
+After storing in the event bus, the backend calls `getRankings()` on the contract to verify the on-chain leaderboard matches. The event bus is the **backend source of truth** for player IDs, scores, and timestamps, while the contract is the **on-chain source of truth** for verified game state.
+
+**Flow diagram:**
+```
+Timer hits 0 (frontend)
+  |
+  v
+game-store applies local penalties -> finalScore -> game-over screen
+  |
+  v
+Frontend calls checkTimeExpiry(signer) -> contract emits TimeExpiredEvent
+  |
+  v
+Backend event listener picks up TimeExpiredEvent
+  |
+  v
+Backend validates penalties (reads getRoomState + getQuizProgress)
+  |
+  v
+Backend submits { player_id, final_score, timestamp, ... } to event_bus
+  |
+  v
+Event bus stores record for leaderboard / analytics
 ```
 
 ---
@@ -628,14 +729,14 @@ const smartAccount = await createSmartAccountClient({
 | Tap "Next Question" | `nextQuestion()` | -- | -- |
 | Tap "Submit Room" | `nextQuestion()` (triggers room eval) | -- | -- |
 | Timer ticks | `timeRemaining--` | -- | -- |
-| Timer hits 0 | `screen: "game-over"` | `checkTimeExpiry()` | -- |
+| Timer hits 0 | Freeze score, deduct -25/incomplete room + -5/unanswered question, `screen: "game-over"` | `checkTimeExpiry()` | Backend event_bus receives final score via `TimeExpiredEvent` |
 
 ### Screen 4: Room Result (`room-result-screen.tsx`)
 
 | Action | Local Store | Contract Call | Backend Call |
 |--------|-------------|---------------|--------------|
 | (Auto) Show pass/fail | Read `roomState.passed` | -- | -- |
-| Tap "Use Hint (-10 pts)" | `useEndOfRoomHint()` | `requestHint(roomId, 1, sig)` | `POST /hint/request` |
+| Tap "Use Hint (-10 pts)" | `useEndOfRoomHint()` -> reveals score + per-question correct/wrong breakdown | `requestHint(roomId, 1, sig)` | `POST /hint/request` |
 | Tap "Retry Room (-5 pts)" | `retryRoom()` | `retryRoom()` | -- |
 | Tap "Enter Room N+1" | `proceedToNextRoom()` | -- | -- |
 | Tap "Finish Game" | `proceedToNextRoom()` -> game-over | -- | -- |
