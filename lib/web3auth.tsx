@@ -47,21 +47,23 @@ export function Web3AuthProvider({ children }: { children: React.ReactNode }) {
   const web3authRef = useRef<any>(null)
   const initPromiseRef = useRef<Promise<void> | null>(null)
 
+  const isDemoMode = !process.env.NEXT_PUBLIC_WEB3AUTH_CLIENT_ID
+
   // Initialize Web3Auth lazily
   const initWeb3Auth = useCallback(async () => {
+    if (isDemoMode) {
+      setIsLoading(false)
+      setIsInitialized(true)
+      return
+    }
+
     if (web3authRef.current) return
     if (initPromiseRef.current) return initPromiseRef.current
 
     initPromiseRef.current = (async () => {
       try {
-        const clientId = process.env.NEXT_PUBLIC_WEB3AUTH_CLIENT_ID
+        const clientId = process.env.NEXT_PUBLIC_WEB3AUTH_CLIENT_ID!
         const network = process.env.NEXT_PUBLIC_WEB3AUTH_NETWORK || "sapphire_devnet"
-
-        if (!clientId) {
-          console.error("[web3auth] Missing NEXT_PUBLIC_WEB3AUTH_CLIENT_ID")
-          setIsLoading(false)
-          return
-        }
 
         const { Web3Auth } = await import("@web3auth/modal")
         const { CHAIN_NAMESPACES } = await import("@web3auth/modal")
@@ -97,7 +99,7 @@ export function Web3AuthProvider({ children }: { children: React.ReactNode }) {
     })()
 
     return initPromiseRef.current
-  }, [])
+  }, [isDemoMode])
 
   const handleConnected = useCallback(async (web3auth: any) => {
     try {
@@ -130,6 +132,16 @@ export function Web3AuthProvider({ children }: { children: React.ReactNode }) {
   const connect = useCallback(async () => {
     try {
       setIsLoading(true)
+
+      // Demo mode: simulate a connection with a fake address
+      if (isDemoMode) {
+        setUserInfo({ name: "Demo Player", email: "demo@aiescaperoom.xyz" })
+        setAddress("0xDEMO000000000000000000000000000000000000")
+        setIsConnected(true)
+        setIsLoading(false)
+        return
+      }
+
       await initWeb3Auth()
       const web3auth = web3authRef.current
       if (!web3auth) throw new Error("Web3Auth not initialized")
@@ -143,7 +155,7 @@ export function Web3AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false)
     }
-  }, [initWeb3Auth, handleConnected])
+  }, [isDemoMode, initWeb3Auth, handleConnected])
 
   const disconnect = useCallback(async () => {
     try {

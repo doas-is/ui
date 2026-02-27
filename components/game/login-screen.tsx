@@ -10,8 +10,9 @@ function truncateAddress(address: string): string {
 }
 
 export function LoginScreen() {
-  const { isConnected, isLoading, userInfo, address, connect } = useWeb3Auth()
+  const { isConnected, isLoading, isInitialized, userInfo, address, connect } = useWeb3Auth()
   const { goToWelcome } = useGameStore()
+  const isDemoMode = !process.env.NEXT_PUBLIC_WEB3AUTH_CLIENT_ID
 
   return (
     <div className="flex min-h-svh flex-col items-center justify-center bg-background px-4 py-8">
@@ -59,7 +60,7 @@ export function LoginScreen() {
                 ) : (
                   <>
                     <LogIn className="size-5" />
-                    <span>Connect with Web3Auth</span>
+                    <span>{isDemoMode ? "Play in Demo Mode" : "Connect with Web3Auth"}</span>
                   </>
                 )}
               </Button>
@@ -112,7 +113,9 @@ export function LoginScreen() {
 
         {/* Footer */}
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          Powered by Web3Auth on Sepolia Testnet
+          {isDemoMode
+            ? "Demo Mode -- set NEXT_PUBLIC_WEB3AUTH_CLIENT_ID for live wallet auth"
+            : "Powered by Web3Auth on Sepolia Testnet"}
         </p>
       </div>
     </div>
