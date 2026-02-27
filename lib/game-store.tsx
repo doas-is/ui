@@ -1,18 +1,21 @@
 "use client"
 
-import { createContext, useContext, useCallback, useMemo, useSyncExternalStore } from "react"
+import { createContext, useContext, useSyncExternalStore } from "react"
 import { rooms, GAME_CONFIG, type Question } from "@/lib/game-data"
 
 // ─── Types ──────────────────────────────────────────────────────
 
-export type GameScreen = "welcome" | "playing" | "room-result" | "game-over"
+export type GameScreen = "login" | "welcome" | "playing" | "room-result" | "game-over"
 
 export interface RoomState {
   roomId: number
   answers: Record<string, number | null> // questionId -> selected option index
   correctAnswers: Record<string, boolean> // questionId -> was it correct
   currentQuestionIndex: number
-  hintUsed: boolean // single hint: reveals wrong questions for -5 pts
+  hintsUsedInRoom: number // 0-2, per-question hints used in this room
+  eliminatedOptions: Record<string, number[]> // questionId -> eliminated option indices
+  endOfRoomHintUsed: boolean
+  endOfRoomHintResult: string | null // e.g., "3/5"
   retryCount: number
   completed: boolean
   passed: boolean
@@ -20,7 +23,6 @@ export interface RoomState {
 
 export interface GameState {
   screen: GameScreen
-  playerName: string
   score: number
   currentRoomIndex: number
   roomStates: RoomState[]
@@ -28,7 +30,7 @@ export interface GameState {
   isTimerRunning: boolean
   selectedAnswer: number | null
   answerConfirmed: boolean
-  penaltyAnimation: { amount: number; type: "retry" | "hint" } | null
+  penaltyAnimation: { amount: number; type: "retry" | "hint" | "room-hint" } | null
 }
 
 type Listener = () => void
@@ -39,7 +41,10 @@ function createInitialRoomState(roomId: number): RoomState {
     answers: {},
     correctAnswers: {},
     currentQuestionIndex: 0,
-    hintUsed: false,
+    hintsUsedInRoom: 0,
+    eliminatedOptions: {},
+    endOfRoomHintUsed: false,
+    endOfRoomHintResult: null,
     retryCount: 0,
     completed: false,
     passed: false,
@@ -48,9 +53,8 @@ function createInitialRoomState(roomId: number): RoomState {
 
 function createInitialState(): GameState {
   return {
-    screen: "welcome",
-    playerName: "",
-    score: 0,
+    screen: "login",
+    score: GAME_CONFIG.startingScore,
     currentRoomIndex: 0,
     roomStates: rooms.map((r) => createInitialRoomState(r.id)),
     timeRemaining: GAME_CONFIG.totalTimeSeconds,
@@ -108,11 +112,14 @@ function createGameStore() {
   }
 
   // Actions
-  function startGame(name: string) {
+  function goToWelcome() {
+    setState({ screen: "welcome" })
+  }
+
+  function startGame() {
     setState({
       ...createInitialState(),
       screen: "playing",
-      playerName: name,
     })
     startTimer()
   }
@@ -135,7 +142,6 @@ function createGameStore() {
     newRoomState.correctAnswers = { ...newRoomState.correctAnswers, [question.id]: isCorrect }
     newRoomStates[currentRoomIndex] = newRoomState
 
-    // No scoring here — scoring happens at end of room
     setState({
       roomStates: newRoomStates,
       selectedAnswer: optionIndex,
@@ -144,7 +150,6 @@ function createGameStore() {
   }
 
   function confirmAnswer() {
-    // kept for compatibility but confirmAnswerImmediate is preferred
     const { selectedAnswer } = state
     if (selectedAnswer === null) return
     confirmAnswerImmediate(selectedAnswer)
@@ -156,10 +161,9 @@ function createGameStore() {
     const room = rooms[currentRoomIndex]
 
     if (roomState.currentQuestionIndex >= room.questions.length - 1) {
-      // Room finished — check results and calculate score
+      // Room finished — check results
       const correctCount = Object.values(roomState.correctAnswers).filter(Boolean).length
       const passed = correctCount >= GAME_CONFIG.passingThreshold
-      const roomScore = correctCount * GAME_CONFIG.pointsPerCorrect
 
       const newRoomStates = [...roomStates]
       newRoomStates[currentRoomIndex] = {
@@ -171,7 +175,6 @@ function createGameStore() {
       setState({
         roomStates: newRoomStates,
         screen: "room-result",
-        score: state.score + roomScore,
         selectedAnswer: null,
         answerConfirmed: false,
       })
@@ -206,22 +209,76 @@ function createGameStore() {
     }
   }
 
-  function useHint() {
+  /**
+   * Per-question hint: eliminates 1 wrong answer option.
+   * Costs -5 from score, max 2 per room.
+   * Can only be used BEFORE answering the current question.
+   */
+  function useQuestionHint() {
     const { currentRoomIndex, roomStates, score } = state
     const roomState = roomStates[currentRoomIndex]
-    if (roomState.hintUsed) return // already used hint
-    if (!roomState.completed) return // only after room attempt
+    const room = rooms[currentRoomIndex]
+    const question = room.questions[roomState.currentQuestionIndex]
+
+    // Check constraints
+    if (roomState.hintsUsedInRoom >= GAME_CONFIG.maxHintsPerRoom) return
+    if (state.answerConfirmed) return // can't hint after answering
+
+    // Find wrong options that haven't been eliminated yet
+    const currentEliminated = roomState.eliminatedOptions[question.id] || []
+    const wrongOptions = question.options
+      .map((_, i) => i)
+      .filter((i) => i !== question.correctIndex && !currentEliminated.includes(i))
+
+    if (wrongOptions.length === 0) return
+
+    // Pick a random wrong option to eliminate
+    const toEliminate = wrongOptions[Math.floor(Math.random() * wrongOptions.length)]
+
+    const newRoomStates = [...roomStates]
+    const newRoomState = { ...roomState }
+    newRoomState.hintsUsedInRoom = roomState.hintsUsedInRoom + 1
+    newRoomState.eliminatedOptions = {
+      ...roomState.eliminatedOptions,
+      [question.id]: [...currentEliminated, toEliminate],
+    }
+    newRoomStates[currentRoomIndex] = newRoomState
+
+    setState({
+      roomStates: newRoomStates,
+      score: Math.max(0, score - GAME_CONFIG.hintPenaltyPerQuestion),
+      penaltyAnimation: { amount: GAME_CONFIG.hintPenaltyPerQuestion, type: "hint" },
+    })
+
+    setTimeout(() => setState({ penaltyAnimation: null }), 1500)
+  }
+
+  /**
+   * End-of-room hint: shows "X/5" correct count.
+   * Costs -10 from score, only available on failed rooms.
+   * Independent from per-question hints.
+   */
+  function useEndOfRoomHint() {
+    const { currentRoomIndex, roomStates, score } = state
+    const roomState = roomStates[currentRoomIndex]
+    const room = rooms[currentRoomIndex]
+
+    if (roomState.endOfRoomHintUsed) return
+    if (roomState.passed) return // only on failed rooms
+
+    const correctCount = Object.values(roomState.correctAnswers).filter(Boolean).length
 
     const newRoomStates = [...roomStates]
     newRoomStates[currentRoomIndex] = {
       ...roomState,
-      hintUsed: true,
+      endOfRoomHintUsed: true,
+      endOfRoomHintResult: `${correctCount}/${room.questions.length}`,
     }
 
     setState({
       roomStates: newRoomStates,
-      score: Math.max(0, score - GAME_CONFIG.hintPenalty),
-      penaltyAnimation: { amount: GAME_CONFIG.hintPenalty, type: "hint" },
+      score: Math.max(0, score - GAME_CONFIG.hintPenaltyEndRoom),
+      penaltyAnimation: { amount: GAME_CONFIG.hintPenaltyEndRoom, type: "room-hint" },
     })
 
     setTimeout(() => setState({ penaltyAnimation: null }), 1500)
@@ -257,13 +314,15 @@ function createGameStore() {
   return {
     getState,
     subscribe,
+    goToWelcome,
     startGame,
     selectAnswer,
     confirmAnswer,
     confirmAnswerImmediate,
     nextQuestion,
     proceedToNextRoom,
-    useHint,
+    useQuestionHint,
+    useEndOfRoomHint,
     retryRoom,
     resetGame,
     stopTimer,
