@@ -1,7 +1,7 @@
 "use client"
 
-import { useGameStore, useCurrentRoom } from "@/lib/game-store"
-import { GAME_CONFIG } from "@/lib/game-data"
+import { useGameStore } from "@/lib/game-store"
+import { rooms as gameRooms, GAME_CONFIG } from "@/lib/game-data"
 import { Clock, Zap } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -12,10 +12,12 @@ function formatTime(seconds: number): string {
 }
 
 export function GameHUD() {
-  const { score, timeRemaining, penaltyAnimation, currentRoomIndex } = useGameStore()
-  const { room, roomState } = useCurrentRoom()
+  const { score, timeRemaining, penaltyAnimation, currentRoomIndex, roomStates } = useGameStore()
   const isWarning = timeRemaining <= GAME_CONFIG.warningTimeSeconds
   const isCritical = timeRemaining <= 60
+
+  const room = gameRooms[currentRoomIndex]
+  const roomState = roomStates[currentRoomIndex]
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-sm">
@@ -23,19 +25,19 @@ export function GameHUD() {
         {/* Timer */}
         <div
           className={cn(
-            "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-mono font-bold",
+            "flex items-center gap-1.5 rounded-full px-3 py-1.5 font-mono text-sm font-bold",
             isCritical
-              ? "bg-game-danger/15 text-game-danger animate-pulse"
+              ? "animate-pulse bg-game-danger/15 text-game-danger"
               : isWarning
                 ? "bg-game-warning/15 text-game-warning"
                 : "bg-secondary text-foreground"
           )}
         >
           <Clock className="size-3.5" />
-          {formatTime(timeRemaining)}
+          <span>{formatTime(timeRemaining)}</span>
         </div>
 
-        {/* Room indicator */}
+        {/* Room indicator dots */}
         <div className="flex items-center gap-1.5">
           {Array.from({ length: GAME_CONFIG.totalRooms }).map((_, i) => (
             <div
@@ -55,12 +57,12 @@ export function GameHUD() {
         {/* Score */}
         <div className="relative flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-sm font-bold text-foreground">
           <Zap className="size-3.5 text-game-warning" />
-          {score}
+          <span>{score}</span>
           <span className="text-xs font-normal text-muted-foreground">pts</span>
           {penaltyAnimation && (
             <span
               className={cn(
-                "absolute -bottom-6 right-0 text-xs font-bold animate-bounce",
+                "absolute -bottom-6 right-0 animate-bounce text-xs font-bold",
                 penaltyAnimation.type === "retry" ? "text-game-danger" : "text-game-warning"
               )}
             >
@@ -81,11 +83,7 @@ export function GameHUD() {
                 key={q.id}
                 className={cn(
                   "h-1 flex-1 rounded-full transition-all",
-                  answered
-                    ? "bg-game-success"
-                    : isCurrent
-                      ? "bg-primary"
-                      : "bg-muted"
+                  answered ? "bg-game-success" : isCurrent ? "bg-primary" : "bg-muted"
                 )}
               />
             )

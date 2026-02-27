@@ -54,12 +54,12 @@ export function LoginScreen() {
                 {isLoading ? (
                   <>
                     <Loader2 className="size-5 animate-spin" />
-                    Connecting...
+                    <span>Connecting...</span>
                   </>
                 ) : (
                   <>
                     <LogIn className="size-5" />
-                    Connect with Web3Auth
+                    <span>Connect with Web3Auth</span>
                   </>
                 )}
               </Button>
@@ -71,7 +71,7 @@ export function LoginScreen() {
                 {userInfo?.profileImage ? (
                   <img
                     src={userInfo.profileImage}
-                    alt="Profile"
+                    alt="Player profile"
                     className="size-14 rounded-full object-cover"
                   />
                 ) : (
@@ -95,7 +95,7 @@ export function LoginScreen() {
                 )}
               </div>
 
-              <div className="w-full rounded-lg bg-game-success/5 border border-game-success/20 px-3 py-2 text-center">
+              <div className="w-full rounded-lg border border-game-success/20 bg-game-success/5 px-3 py-2 text-center">
                 <p className="text-sm font-medium text-game-success">Wallet Connected</p>
               </div>
 

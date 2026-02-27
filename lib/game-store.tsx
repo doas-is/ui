@@ -24,6 +24,7 @@ export interface RoomState {
 export interface GameState {
   screen: GameScreen
   score: number
+  playerName: string
   currentRoomIndex: number
   roomStates: RoomState[]
   timeRemaining: number
@@ -55,6 +56,7 @@ function createInitialState(): GameState {
   return {
     screen: "login",
     score: GAME_CONFIG.startingScore,
+    playerName: "",
     currentRoomIndex: 0,
     roomStates: rooms.map((r) => createInitialRoomState(r.id)),
     timeRemaining: GAME_CONFIG.totalTimeSeconds,
@@ -116,9 +118,10 @@ function createGameStore() {
     setState({ screen: "welcome" })
   }
 
-  function startGame() {
+  function startGame(name: string) {
     setState({
       ...createInitialState(),
+      playerName: name,
       screen: "playing",
     })
     startTimer()
@@ -254,9 +257,9 @@ function createGameStore() {
   }
 
   /**
-   * End-of-room hint: shows "X/5" correct count.
+   * End-of-room hint: shows "X/5" wrong count (how many wrong).
    * Costs -10 from score, only available on failed rooms.
-   * Independent from per-question hints.
+   * Shows the number of wrong answers NOT which ones.
    */
   function useEndOfRoomHint() {
     const { currentRoomIndex, roomStates, score } = state
