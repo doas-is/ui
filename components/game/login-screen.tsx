@@ -10,8 +10,9 @@ function truncateAddress(address: string): string {
 }
 
 export function LoginScreen() {
-  const { isConnected, isLoading, userInfo, address, connect } = useWeb3Auth()
+  const { isConnected, isLoading, isInitialized, userInfo, address, connect } = useWeb3Auth()
   const { goToWelcome } = useGameStore()
+  const isDemoMode = !process.env.NEXT_PUBLIC_WEB3AUTH_CLIENT_ID
 
   return (
     <div className="flex min-h-svh flex-col items-center justify-center bg-background px-4 py-8">
@@ -54,12 +55,12 @@ export function LoginScreen() {
                 {isLoading ? (
                   <>
                     <Loader2 className="size-5 animate-spin" />
-                    Connecting...
+                    <span>Connecting...</span>
                   </>
                 ) : (
                   <>
                     <LogIn className="size-5" />
-                    Connect with Web3Auth
+                    <span>{isDemoMode ? "Play in Demo Mode" : "Connect with Web3Auth"}</span>
                   </>
                 )}
               </Button>
@@ -71,7 +72,7 @@ export function LoginScreen() {
                 {userInfo?.profileImage ? (
                   <img
                     src={userInfo.profileImage}
-                    alt="Profile"
+                    alt="Player profile"
                     className="size-14 rounded-full object-cover"
                   />
                 ) : (
@@ -95,7 +96,7 @@ export function LoginScreen() {
                 )}
               </div>
 
-              <div className="w-full rounded-lg bg-game-success/5 border border-game-success/20 px-3 py-2 text-center">
+              <div className="w-full rounded-lg border border-game-success/20 bg-game-success/5 px-3 py-2 text-center">
                 <p className="text-sm font-medium text-game-success">Wallet Connected</p>
               </div>
 
@@ -112,7 +113,9 @@ export function LoginScreen() {
 
         {/* Footer */}
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          Powered by Web3Auth on Sepolia Testnet
+          {isDemoMode
+            ? "Demo Mode -- set NEXT_PUBLIC_WEB3AUTH_CLIENT_ID for live wallet auth"
+            : "Powered by Web3Auth on Sepolia Testnet"}
         </p>
       </div>
     </div>

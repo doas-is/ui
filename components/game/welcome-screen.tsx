@@ -54,7 +54,10 @@ export function WelcomeScreen() {
 
         {/* Name input */}
         <div className="mb-6 w-full max-w-xs">
-          <label htmlFor="player-name" className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          <label
+            htmlFor="player-name"
+            className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted-foreground"
+          >
             Player Name
           </label>
           <input
@@ -77,7 +80,7 @@ export function WelcomeScreen() {
             className="h-12 w-full bg-game-success text-game-success-foreground hover:bg-game-success/90 text-base font-semibold"
             size="lg"
           >
-            Start Game
+            <span>Start Game</span>
             <ChevronRight className="size-5" />
           </Button>
           <Button
@@ -97,35 +100,79 @@ export function WelcomeScreen() {
 
           {/* Stats grid */}
           <div className="mb-6 grid grid-cols-2 gap-3">
-            <RuleStat icon={<Target className="size-4 text-primary" />} label="Max Score" value={`${GAME_CONFIG.maxScore} pts`} />
-            <RuleStat icon={<Clock className="size-4 text-game-warning" />} label="Time Limit" value="15 min" />
-            <RuleStat icon={<Lightbulb className="size-4 text-game-warning" />} label="Hint Penalty" value="-10 pts" />
-            <RuleStat icon={<RotateCcw className="size-4 text-game-danger" />} label="Retry Penalty" value="-5 pts" />
+            <RuleStat
+              icon={<Target className="size-4 text-primary" />}
+              label="Max Score"
+              value={`${GAME_CONFIG.maxScore} pts`}
+            />
+            <RuleStat
+              icon={<Clock className="size-4 text-game-warning" />}
+              label="Time Limit"
+              value="15 min"
+            />
+            <RuleStat
+              icon={<Lightbulb className="size-4 text-game-warning" />}
+              label="Hint Penalty"
+              value="-5 pts"
+            />
+            <RuleStat
+              icon={<RotateCcw className="size-4 text-game-danger" />}
+              label="Retry Penalty"
+              value="-5 pts"
+            />
           </div>
 
           {/* Rules list */}
-          <div className="mb-6 space-y-3">
+          <div className="mb-6 flex flex-col gap-3">
             <RuleItem number={1} text="4 rooms must be completed in sequence." />
-            <RuleItem number={2} text={`Each room has ${GAME_CONFIG.questionsPerRoom} multiple-choice questions (4 options).`} />
-            <RuleItem number={3} text={`You earn ${GAME_CONFIG.pointsPerCorrect} points per correct answer.`} />
-            <RuleItem number={4} text={`You need at least ${GAME_CONFIG.passingThreshold}/${GAME_CONFIG.questionsPerRoom} correct to pass a room.`} />
-            <RuleItem number={5} text="Answers are not revealed during the quiz. Results come after submitting the room." />
-            <RuleItem number={6} text="If you fail, use Hint (-10 pts) to see which questions were wrong." />
-            <RuleItem number={7} text="Retry resets the room with a -5 pts penalty (wrong answers stay hidden)." />
-            <RuleItem number={8} text="The global timer of 15 minutes applies to the entire game." />
+            <RuleItem
+              number={2}
+              text={`Each room has ${GAME_CONFIG.questionsPerRoom} multiple-choice questions (4 options).`}
+            />
+            <RuleItem
+              number={3}
+              text={`You need at least ${GAME_CONFIG.passingThreshold}/${GAME_CONFIG.questionsPerRoom} correct to pass a room.`}
+            />
+            <RuleItem
+              number={4}
+              text="Each question has a Hint button (-5 pts) that eliminates 1 wrong answer. Max 2 hints per room."
+            />
+            <RuleItem
+              number={5}
+              text="After a failed room, you can use a Room Hint (-10 pts) to see your score like 3/5."
+            />
+            <RuleItem
+              number={6}
+              text="Retry resets the room with a -5 pts penalty."
+            />
+            <RuleItem
+              number={7}
+              text="The global timer of 15 minutes applies to the entire game."
+            />
+            <RuleItem
+              number={8}
+              text="Final scores are only shown on the leaderboard at the end of the game."
+            />
           </div>
 
           {/* Rooms preview */}
           <h3 className="mb-3 text-sm font-semibold text-foreground">Rooms</h3>
-          <div className="space-y-2">
+          <div className="flex flex-col gap-2">
             {rooms.map((room, i) => (
-              <div key={room.id} className="flex items-center gap-3 rounded-lg border border-border bg-secondary/50 px-3 py-2.5">
+              <div
+                key={room.id}
+                className="flex items-center gap-3 rounded-lg border border-border bg-secondary/50 px-3 py-2.5"
+              >
                 <div className="flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
                   {roomIcons[room.icon]}
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">Room {i + 1}: {room.name}</p>
-                  <p className="text-xs text-muted-foreground">{room.questions.length} questions</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">
+                    Room {i + 1}: {room.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {room.questions.length} questions
+                  </p>
                 </div>
               </div>
             ))}
@@ -136,7 +183,15 @@ export function WelcomeScreen() {
   )
 }
 
-function RuleStat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function RuleStat({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode
+  label: string
+  value: string
+}) {
   return (
     <div className="flex items-center gap-2.5 rounded-lg border border-border bg-secondary/50 px-3 py-2.5">
       {icon}

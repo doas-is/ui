@@ -1,6 +1,7 @@
 "use client"
 
 import { useGameStore } from "@/lib/game-store"
+import { LoginScreen } from "@/components/game/login-screen"
 import { WelcomeScreen } from "@/components/game/welcome-screen"
 import { GameHUD } from "@/components/game/game-hud"
 import { QuestionCard } from "@/components/game/question-card"
@@ -9,6 +10,10 @@ import { GameOverScreen } from "@/components/game/game-over-screen"
 
 export function GameShell() {
   const { screen } = useGameStore()
+
+  if (screen === "login") {
+    return <LoginScreen />
+  }
 
   if (screen === "welcome") {
     return <WelcomeScreen />

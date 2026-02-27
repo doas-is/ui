@@ -6,14 +6,12 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import {
   Trophy,
-  Medal,
   Star,
   Check,
   X,
   Share2,
   RotateCcw,
   Clock,
-  Zap,
   Brain,
   MessageSquare,
   Bot,
@@ -27,7 +25,7 @@ const roomIcons: Record<string, React.ReactNode> = {
   Blocks: <Blocks className="size-5" />,
 }
 
-// Fake leaderboard for demo — in production this comes from backend
+// Mock leaderboard for demo -- in production this comes from contract.getRankings()
 const MOCK_LEADERBOARD = [
   { name: "Satoshi", score: 95 },
   { name: "Vitalik", score: 90 },
@@ -46,15 +44,12 @@ export function GameOverScreen() {
 
   const allRoomsPassed = roomStates.every((rs) => rs.passed)
   const roomsCleared = roomStates.filter((rs) => rs.passed).length
-  const totalCorrect = roomStates.reduce((acc, rs) => {
-    return acc + Object.values(rs.correctAnswers).filter(Boolean).length
-  }, 0)
+  const totalHintsUsed = roomStates.reduce((acc, rs) => acc + rs.hintsUsedInRoom + (rs.endOfRoomHintUsed ? 1 : 0), 0)
 
   // Merge player into leaderboard
   const leaderboard = [...MOCK_LEADERBOARD, { name: playerName || "You", score }]
     .sort((a, b) => b.score - a.score)
     .slice(0, 10)
-  const playerRank = leaderboard.findIndex((e) => e.name === (playerName || "You")) + 1
 
   const scorePercentage = Math.round((score / GAME_CONFIG.maxScore) * 100)
 
@@ -94,7 +89,7 @@ export function GameOverScreen() {
       <div className="mb-6 rounded-2xl border border-border bg-card p-5">
         <div className="mb-4 flex items-center justify-center">
           <div className="relative">
-            <svg className="size-28" viewBox="0 0 120 120">
+            <svg className="size-28" viewBox="0 0 120 120" aria-hidden="true">
               <circle
                 cx="60"
                 cy="60"
@@ -115,7 +110,11 @@ export function GameOverScreen() {
                 strokeLinecap="round"
                 transform="rotate(-90 60 60)"
                 className={cn(
-                  score >= 80 ? "text-game-success" : score >= 50 ? "text-game-warning" : "text-game-danger"
+                  score >= 80
+                    ? "text-game-success"
+                    : score >= 50
+                      ? "text-game-warning"
+                      : "text-game-danger"
                 )}
               />
             </svg>
@@ -136,13 +135,15 @@ export function GameOverScreen() {
           </div>
           <div className="flex flex-col items-center rounded-lg bg-secondary p-2.5">
             <Star className="mb-1 size-4 text-game-warning" />
-            <span className="text-sm font-bold text-foreground">{roomsCleared}/{GAME_CONFIG.totalRooms}</span>
+            <span className="text-sm font-bold text-foreground">
+              {roomsCleared}/{GAME_CONFIG.totalRooms}
+            </span>
             <span className="text-[10px] text-muted-foreground">Rooms</span>
           </div>
           <div className="flex flex-col items-center rounded-lg bg-secondary p-2.5">
             <Check className="mb-1 size-4 text-game-success" />
-            <span className="text-sm font-bold text-foreground">{totalCorrect}/{GAME_CONFIG.totalRooms * GAME_CONFIG.questionsPerRoom}</span>
-            <span className="text-[10px] text-muted-foreground">Correct</span>
+            <span className="text-sm font-bold text-foreground">{totalHintsUsed}</span>
+            <span className="text-[10px] text-muted-foreground">Hints Used</span>
           </div>
         </div>
       </div>
@@ -152,10 +153,9 @@ export function GameOverScreen() {
         <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
           Room Breakdown
         </p>
-        <div className="space-y-2">
+        <div className="flex flex-col gap-2">
           {rooms.map((room, i) => {
             const rs = roomStates[i]
-            const correctInRoom = Object.values(rs.correctAnswers).filter(Boolean).length
             return (
               <div
                 key={room.id}
@@ -171,20 +171,26 @@ export function GameOverScreen() {
                 <div
                   className={cn(
                     "flex size-8 items-center justify-center rounded-md",
-                    rs.passed ? "bg-game-success/15 text-game-success" : "bg-secondary text-muted-foreground"
+                    rs.passed
+                      ? "bg-game-success/15 text-game-success"
+                      : "bg-secondary text-muted-foreground"
                   )}
                 >
                   {roomIcons[room.icon]}
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">{room.name}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-foreground">{room.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {rs.completed ? `${correctInRoom}/${room.questions.length} correct` : "Not attempted"}
+                    {rs.completed
+                      ? rs.passed
+                        ? "Passed"
+                        : "Failed"
+                      : "Not attempted"}
                     {rs.retryCount > 0 && ` | ${rs.retryCount} retries`}
-                    {rs.hintsUsed > 0 && ` | ${rs.hintsUsed} hints`}
+                    {rs.hintsUsedInRoom > 0 && ` | ${rs.hintsUsedInRoom} hints`}
                   </p>
                 </div>
-                <div className="flex size-7 items-center justify-center">
+                <div className="flex size-7 shrink-0 items-center justify-center">
                   {rs.passed ? (
                     <Check className="size-4 text-game-success" />
                   ) : rs.completed ? (
@@ -204,7 +210,7 @@ export function GameOverScreen() {
         <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
           Leaderboard
         </p>
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="overflow-hidden rounded-xl border border-border bg-card">
           {leaderboard.map((entry, i) => {
             const isPlayer = entry.name === (playerName || "You")
             return (
@@ -217,7 +223,7 @@ export function GameOverScreen() {
               >
                 <div
                   className={cn(
-                    "flex size-7 items-center justify-center rounded-full text-xs font-bold",
+                    "flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold",
                     i === 0
                       ? "bg-game-warning/15 text-game-warning"
                       : i === 1
@@ -231,7 +237,7 @@ export function GameOverScreen() {
                 </div>
                 <span
                   className={cn(
-                    "flex-1 text-sm",
+                    "min-w-0 flex-1 truncate text-sm",
                     isPlayer ? "font-bold text-primary" : "text-foreground"
                   )}
                 >
@@ -254,7 +260,7 @@ export function GameOverScreen() {
           size="lg"
         >
           <Share2 className="size-4" />
-          Share Results
+          <span>Share Results</span>
         </Button>
         <Button
           variant="outline"
@@ -262,7 +268,7 @@ export function GameOverScreen() {
           className="h-10 w-full border-border text-foreground"
         >
           <RotateCcw className="size-4" />
-          Play Again
+          <span>Play Again</span>
         </Button>
       </div>
     </div>
