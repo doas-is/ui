@@ -16,326 +16,274 @@ export interface Room {
 
 export const GAME_CONFIG = {
   totalRooms: 4,
-  questionsPerRoom: 10,
+  questionsPerRoom: 5,
   pointsPerCorrect: 5,
-  maxScore: 200,
-  passingThreshold: 8, // out of 10
+  maxScore: 100,
+  startingScore: 100,
+  passingThreshold: 4, // out of 5
   totalTimeSeconds: 15 * 60, // 15 minutes
   retryPenalty: 5,
-  hintPenalty: 10,
+  hintPenaltyPerQuestion: 5,
+  hintPenaltyEndRoom: 10,
+  maxHintsPerRoom: 2,
   warningTimeSeconds: 2 * 60, // 2 minutes warning
 } as const
 
 export const rooms: Room[] = [
   {
     id: 1,
-    name: "AI Foundations",
-    slug: "ai-foundations",
+    name: "Machine Learning Foundations",
+    slug: "ml-foundations",
     icon: "Brain",
-    description: "Test your knowledge of artificial intelligence fundamentals, machine learning types, and data preprocessing.",
+    description: "Test your deep knowledge of machine learning theory, ensemble methods, and statistical inference.",
     questions: [
       {
-        id: "ch1_q01",
-        text: "What is machine learning a subset of?",
+        id: "ch1_q1",
+        text: "What is the primary difference between supervised and unsupervised learning?",
         options: [
-          "Deep Learning",
-          "Artificial Intelligence",
-          "Data Science",
-          "Statistics"
+          "The computational complexity of the learning task",
+          "The presence or absence of labeled data during training",
+          "The specific type of algorithm architecture implemented",
+          "The overall size and volume of the dataset used",
         ],
-        correctIndex: 1
+        correctIndex: 1,
       },
       {
-        id: "ch1_q02",
-        text: "What are the three main types of machine learning?",
+        id: "ch1_q2",
+        text: "What is the statistical role of bootstrap sampling in ensemble methods?",
         options: [
-          "Supervised, Unsupervised, Reinforcement",
-          "Supervised, Unsupervised, Semi-supervised",
-          "Regression, Classification, Clustering",
-          "Linear Regression, Logistic Regression, Decision Trees"
+          "It enforces strict independence across all features",
+          "It guarantees asymptotic consistency for models",
+          "It introduces controlled sample variance between learners",
+          "It reduces bias by expanding the hypothesis space",
         ],
-        correctIndex: 1
+        correctIndex: 2,
       },
       {
-        id: "ch1_q03",
-        text: "What is an example of a regression task?",
+        id: "ch1_q3",
+        text: "Why does averaging multiple high-variance estimators reduce overall variance?",
         options: [
-          "Predicting whether a customer will buy a product",
-          "Predicting the value of a particular stock",
-          "Classifying images into different categories",
-          "Clustering similar data points together"
+          "Errors cancel when estimators are partially decorrelated",
+          "Parameter norms shrink significantly during aggregation",
+          "Overfitting disappears with repeated sampling iterations",
+          "Bias decreases proportionally to the ensemble size",
         ],
-        correctIndex: 1
+        correctIndex: 0,
       },
       {
-        id: "ch1_q04",
-        text: "What is the purpose of the High Correlation filter technique in data cleaning?",
+        id: "ch1_q4",
+        text: "What is the primary advantage of using Support Vector Machines (SVMs) in classification tasks?",
         options: [
-          "To identify and drop features with constant values",
-          "To find highly correlated features and remove them to reduce multicollinearity",
-          "To replace missing values with suitable values",
-          "To delete rows with outliers"
+          "They are significantly more efficient than decision trees",
+          "They can handle much larger datasets than random forests",
+          "They are more suitable for regression than classification tasks",
+          "They offer high accuracy and capture complex relationships",
         ],
-        correctIndex: 1
+        correctIndex: 3,
       },
       {
-        id: "ch1_q05",
-        text: "What is the difference between feature selection and feature extraction?",
+        id: "ch1_q5",
+        text: "What distinguishes Bayesian posterior inference from maximum likelihood estimation?",
         options: [
-          "Feature selection involves creating new features, while feature extraction involves selecting a subset of existing features",
-          "Feature selection involves selecting a subset of existing features, while feature extraction involves creating new features",
-          "Feature selection and feature extraction are the same thing",
-          "Feature selection is used for regression tasks, while feature extraction is used for classification tasks"
+          "It restricts parameter search to convex regions only",
+          "It avoids making assumptions about prior distributions",
+          "It outputs a distribution over parameters rather than point estimates",
+          "It removes the need for regularization entirely",
         ],
-        correctIndex: 1
+        correctIndex: 2,
       },
-      {
-        id: "ch1_q06",
-        text: "What is the purpose of dimensionality reduction?",
-        options: [
-          "To increase the number of features in a dataset",
-          "To reduce the number of features in a dataset",
-          "To improve the accuracy of a model",
-          "To increase the training time of a model"
-        ],
-        correctIndex: 1
-      },
-      {
-        id: "ch1_q07",
-        text: "What is an example of an unsupervised learning algorithm that involves clustering?",
-        options: [
-          "Linear Regression",
-          "Decision Trees",
-          "k-Means",
-          "Support Vector Machines"
-        ],
-        correctIndex: 2
-      },
-      {
-        id: "ch1_q08",
-        text: "How does the meanshift algorithm differ from the k-Means algorithm?",
-        options: [
-          "The meanshift algorithm requires specifying a value for k, while the k-Means algorithm does not",
-          "The meanshift algorithm does not require specifying a value for k, while the k-Means algorithm does",
-          "The meanshift algorithm is used for regression tasks, while the k-Means algorithm is used for classification tasks",
-          "The meanshift algorithm is used for classification tasks, while the k-Means algorithm is used for regression tasks"
-        ],
-        correctIndex: 1
-      },
-      {
-        id: "ch1_q09",
-        text: "What is the purpose of the Missing Value Ratio technique in data cleaning?",
-        options: [
-          "To identify and drop features with constant values",
-          "To find highly correlated features and remove them to reduce multicollinearity",
-          "To replace missing values with suitable values",
-          "To drop features with a large number of missing values"
-        ],
-        correctIndex: 3
-      },
-      {
-        id: "ch1_q10",
-        text: "What is the advantage of using feature selection in machine learning?",
-        options: [
-          "It increases the training time of a model",
-          "It makes the model more complex and harder to interpret",
-          "It reduces the training time of a model and makes it easier to interpret",
-          "It has no effect on the performance of a model"
-        ],
-        correctIndex: 2
-      }
-    ]
+    ],
   },
   {
     id: 2,
-    name: "LLMs",
-    slug: "llms",
+    name: "Retrieval-Augmented Generation (RAG)",
+    slug: "rag",
     icon: "MessageSquare",
-    description: "Dive into Large Language Models, transformers, and natural language processing.",
+    description: "Dive into advanced RAG techniques, modular architectures, and retrieval optimization.",
     questions: [
       {
-        id: "r2q1",
-        text: "What architecture is the foundation of most modern LLMs?",
+        id: "ch2_q1",
+        text: "What specific advantage does RAG offer regarding security and privacy management compared to fine-tuning?",
         options: [
-          "Recurrent Neural Networks (RNN)",
-          "Convolutional Neural Networks (CNN)",
-          "Transformer",
-          "Boltzmann Machines"
+          "It prevents the model from generating any toxic or biased content",
+          "It leverages built-in database roles and security controls to manage data usage",
+          "It eliminates the need for storing user query history",
+          "It automatically encrypts the model's parametric knowledge base",
         ],
-        correctIndex: 2
+        correctIndex: 1,
       },
       {
-        id: "r2q2",
-        text: "What does 'attention mechanism' do in a Transformer model?",
+        id: "ch2_q2",
+        text: 'What is the purpose of the "alignment optimization" strategy in the data indexing phase?',
         options: [
-          "It filters out irrelevant training data",
-          "It allows the model to focus on relevant parts of the input sequence",
-          "It speeds up the GPU computation",
-          "It reduces memory usage"
+          "To remove duplicate documents from the external database",
+          "To translate all foreign language documents into English",
+          "To introduce hypothetical questions that align with document content",
+          "To force all text chunks to conform to a uniform size",
         ],
-        correctIndex: 1
+        correctIndex: 2,
       },
       {
-        id: "r2q3",
-        text: "What is 'tokenization' in the context of LLMs?",
+        id: "ch2_q3",
+        text: 'What is the functional role of the "Extra Generation Module" in the Modular RAG paradigm?',
         options: [
-          "Converting models into cryptocurrency tokens",
-          "Breaking text into smaller units (tokens) for processing",
-          "Encrypting the model weights",
-          "Compressing the training dataset"
+          "To produce a summary of all documents stored in the vector database",
+          "To create synthetic training data for fine-tuning the retriever",
+          "To generate adversarial examples for testing the system's robustness",
+          "To leverage the LLM to generate context likely to contain relevant information",
         ],
-        correctIndex: 1
+        correctIndex: 3,
       },
       {
-        id: "r2q4",
-        text: "What is 'hallucination' in LLMs?",
+        id: "ch2_q4",
+        text: 'How does the "ReRank" technique in Advanced RAG specifically address the limitations of the context window?',
         options: [
-          "When the model generates confident but factually incorrect information",
-          "When the model stops generating output",
-          "When the model runs out of memory",
-          "When the model creates visual images"
+          "By expanding the maximum token limit of the language model",
+          "By converting semantic vectors back into raw text formats",
+          "By relocating the most relevant information to the edges of the prompt",
+          "By filtering out documents that contain toxic or biased language",
         ],
-        correctIndex: 0
+        correctIndex: 2,
       },
       {
-        id: "r2q5",
-        text: "What technique is commonly used to adapt a pre-trained LLM to specific tasks?",
+        id: "ch2_q5",
+        text: 'What characterizes the issue of "low precision" in the retrieval stage of Naive RAG?',
         options: [
-          "Data augmentation",
-          "Fine-tuning",
-          "Feature engineering",
-          "Dimensionality reduction"
+          "The model generates an answer that is not supported by the context",
+          "The retrieval set contains blocks that do not correlate with the query",
+          "The retrieved documents exceed the model's context window limit",
+          "The retrieval process fails to access the external knowledge base",
         ],
-        correctIndex: 1
-      }
-    ]
+        correctIndex: 1,
+      },
+    ],
   },
   {
     id: 3,
-    name: "Agentic AI",
-    slug: "agentic-ai",
+    name: "Agentic Systems in Cybersecurity",
+    slug: "agentic-cybersecurity",
     icon: "Bot",
-    description: "Explore autonomous AI agents, tool use, reasoning chains, and multi-agent systems.",
+    description: "Explore autonomous AI agents, threat hunting, and dual-use challenges in cybersecurity.",
     questions: [
       {
-        id: "r3q1",
-        text: "What distinguishes an 'AI agent' from a standard LLM?",
+        id: "ch3_q1",
+        text: "What structural feature differentiates agentic systems from reactive generators?",
         options: [
-          "It has a larger model size",
-          "It can autonomously plan, use tools, and take actions",
-          "It only works offline",
-          "It requires no training data"
+          "Multi-turn conversational memory capabilities",
+          "Persistent state with action-feedback loops",
+          "Transformer-based decoding architectures",
+          "Pretraining on large, diverse text corpora",
         ],
-        correctIndex: 1
+        correctIndex: 1,
       },
       {
-        id: "r3q2",
-        text: "What is 'ReAct' in the context of AI agents?",
+        id: "ch3_q2",
+        text: "Why are agentic systems particularly effective in threat hunting?",
         options: [
-          "A JavaScript framework for building UIs",
-          "A pattern combining Reasoning and Acting in language models",
-          "A method for training reward models",
-          "A database for storing agent memories"
+          "They operate without any external tools",
+          "They replace analysts entirely",
+          "They eliminate false positives completely",
+          "They iteratively plan and adapt investigations",
         ],
-        correctIndex: 1
+        correctIndex: 3,
       },
       {
-        id: "r3q3",
-        text: "What is 'tool use' in agentic AI?",
+        id: "ch3_q3",
+        text: "What risk emerges from dual-use capabilities in agentic cybersecurity systems?",
         options: [
-          "Using physical robotic tools",
-          "The ability of an AI to call external APIs or functions to complete tasks",
-          "A method for compressing model weights",
-          "A technique for data labeling"
+          "Escalation through automated adversarial replication",
+          "Reduced logging transparency in operations",
+          "Latency increases in distributed environments",
+          "Overfitting to historical attack patterns",
         ],
-        correctIndex: 1
+        correctIndex: 0,
       },
       {
-        id: "r3q4",
-        text: "What is the main challenge with multi-agent systems?",
+        id: "ch3_q4",
+        text: "What is the primary challenge in designing agentic threat hunting systems?",
         options: [
-          "They require exactly two agents",
-          "Coordination, communication, and preventing conflicting actions",
-          "They can only work on text tasks",
-          "They are always slower than single models"
+          "Focusing solely on isolated alert handling",
+          "Preserving analyst flexibility while remaining robust",
+          "Limiting use to routine alert-driven workflows",
+          "Ensuring systems are completely autonomous",
         ],
-        correctIndex: 1
+        correctIndex: 1,
       },
       {
-        id: "r3q5",
-        text: "What is a 'chain of thought' prompting technique?",
+        id: "ch3_q5",
+        text: "What tradeoff defines responsiveness versus controllability in agentic systems?",
         options: [
-          "Linking multiple LLMs in sequence",
-          "Asking the model to show its step-by-step reasoning process",
-          "Creating a blockchain of model outputs",
-          "Using multiple GPUs in a chain"
+          "Model size versus inference speed metrics",
+          "Precision versus recall in classification",
+          "Exploration depth versus policy constraint",
+          "Encryption strength versus observability",
         ],
-        correctIndex: 1
-      }
-    ]
+        correctIndex: 2,
+      },
+    ],
   },
   {
     id: 4,
-    name: "Blockchain & Quantum",
-    slug: "blockchain-quantum",
+    name: "Blockchain Security",
+    slug: "blockchain-security",
     icon: "Blocks",
-    description: "Master blockchain fundamentals, smart contracts, and quantum computing concepts.",
+    description: "Master blockchain privacy, consensus mechanisms, cryptographic authority, and attack economics.",
     questions: [
       {
-        id: "r4q1",
-        text: "What is a 'smart contract'?",
+        id: "ch4_q1",
+        text: "Why does address reuse reduce privacy in Bitcoin?",
         options: [
-          "A legally binding digital document",
-          "Self-executing code stored on a blockchain that runs when conditions are met",
-          "An AI that negotiates contracts",
-          "An encrypted email protocol"
+          "It exposes transaction graph linkability",
+          "It weakens cryptographic hashing algorithms",
+          "It lowers the mining difficulty temporarily",
+          "It invalidates digital signatures permanently",
         ],
-        correctIndex: 1
+        correctIndex: 0,
       },
       {
-        id: "r4q2",
-        text: "What consensus mechanism does Ethereum currently use?",
+        id: "ch4_q2",
+        text: "What mechanism enforces transaction immutability in the blockchain?",
         options: [
-          "Proof of Work",
-          "Proof of Stake",
-          "Proof of Authority",
-          "Delegated Proof of Stake"
+          "Centralized ledger reconciliation protocols",
+          "Miner fee competition dynamics",
+          "Wallet encryption standards compliance",
+          "Proof-of-work chained hashing",
         ],
-        correctIndex: 1
+        correctIndex: 3,
       },
       {
-        id: "r4q3",
-        text: "What is a 'qubit' in quantum computing?",
+        id: "ch4_q3",
+        text: "Why does double-spending require majority hash power to succeed?",
         options: [
-          "A classical bit that is faster",
-          "A quantum bit that can exist in superposition of 0 and 1",
-          "A unit of blockchain storage",
-          "A type of encryption key"
+          "Private keys are designed for one-time use",
+          "Chain reorganization demands cumulative work dominance",
+          "Blocks propagate sequentially across nodes",
+          "Nodes validate signatures independently",
         ],
-        correctIndex: 1
+        correctIndex: 1,
       },
       {
-        id: "r4q4",
-        text: "What is 'quantum supremacy'?",
+        id: "ch4_q4",
+        text: "What cryptographic property enables spending authority in Bitcoin?",
         options: [
-          "When quantum computers become affordable for everyone",
-          "When a quantum computer solves a problem faster than any classical computer",
-          "When all encryption is broken by quantum computers",
-          "When quantum computers replace all classical computers"
+          "Merkle tree inclusion proofs",
+          "Hash preimage resistance functions",
+          "ECDSA signature verification",
+          "Timestamp ordering mechanisms",
         ],
-        correctIndex: 1
+        correctIndex: 2,
       },
       {
-        id: "r4q5",
-        text: "What problem does blockchain's immutability solve?",
+        id: "ch4_q5",
+        text: "Why does increasing hash rate improve network security?",
         options: [
-          "Slow internet connections",
-          "Data tampering and trust in decentralized systems",
-          "High electricity costs",
-          "Software compatibility issues"
+          "It shortens transaction confirmation intervals",
+          "It reduces block size variability",
+          "It compresses transaction data efficiently",
+          "It raises the cost of rewriting history",
         ],
-        correctIndex: 1
-      }
-    ]
-  }
+        correctIndex: 3,
+      },
+    ],
+  },
 ]
